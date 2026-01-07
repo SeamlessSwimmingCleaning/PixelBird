@@ -5,7 +5,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <title>Pixel Bird Locked</title>
+    <title>Pixel Bird Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -21,7 +21,6 @@
             --overlay-bg: rgba(0, 0, 0, 0.7);
         }
 
-        /* CRITICAL: This stops the scrolling and bouncing on iOS */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; position: fixed; 
@@ -31,7 +30,7 @@
         * { 
             -webkit-touch-callout: none; 
             -webkit-user-select: none; 
-            touch-action: none; /* Stops all default touch behavior like scrolling */
+            touch-action: none; 
             box-sizing: border-box; 
         }
 
@@ -71,7 +70,7 @@
             font-family: 'Press Start 2P', cursive; font-size: 10px;
             background: #e67e22; color: white; border: 4px solid #d35400;
             cursor: pointer;
-            touch-action: auto; /* Allows buttons to be clickable */
+            touch-action: auto;
         }
 
         .hidden { display: none !important; }
@@ -114,7 +113,6 @@
 </div>
 
 <script>
-    // PREVENT ALL SCROLLING
     document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
 
     var canvas = document.getElementById('gameCanvas');
@@ -130,6 +128,35 @@
     var muted = false;
     var darkMode = false;
     var easyMode = false;
+
+    // Ground Logic
+    var ground = {
+        x: 0,
+        y: 460, // Position from top
+        h: 60,  // Height of ground
+        speed: 2,
+        draw: function() {
+            // Dirt base
+            ctx.fillStyle = "#ded895";
+            ctx.fillRect(this.x, this.y, canvas.width * 2, this.h);
+            
+            // Grass top line
+            ctx.fillStyle = "#73bf2e";
+            ctx.fillRect(this.x, this.y, canvas.width * 2, 12);
+            
+            // Decorative pixel tufts
+            ctx.fillStyle = "#558022";
+            for(var i = 0; i < 20; i++) {
+                ctx.fillRect(this.x + (i * 40), this.y + 4, 15, 4);
+            }
+        },
+        update: function() {
+            if (state === 'PLAYING' || state === 'MENU') {
+                this.x -= this.speed;
+                if (this.x <= -canvas.width) this.x = 0;
+            }
+        }
+    };
 
     document.getElementById('menu-best').innerText = "BEST: " + highScore;
 
@@ -148,7 +175,8 @@
             if(state !== 'PLAYING') return;
             this.v += this.gravity;
             this.y += this.v;
-            if (this.y + this.h > canvas.height) endGame();
+            // Collision with ground
+            if (this.y + this.h > ground.y) endGame();
             if (this.y < 0) this.y = 0;
         }
     };
@@ -159,7 +187,8 @@
             if(state !== 'PLAYING') return;
             var gap = easyMode ? 170 : 120; 
             if(frames % 90 === 0) {
-                this.list.push({ x: canvas.width, y: Math.random() * (canvas.height - 250) + 50 });
+                // Height adjusted so pipes don't go under ground
+                this.list.push({ x: canvas.width, y: Math.random() * (ground.y - gap - 100) + 50 });
             }
             for(var i = 0; i < this.list.length; i++) {
                 var p = this.list[i];
@@ -179,10 +208,10 @@
             for(var i = 0; i < this.list.length; i++) {
                 var p = this.list[i];
                 ctx.fillRect(p.x, 0, this.width, p.y);
-                ctx.fillRect(p.x, p.y + gap, this.width, canvas.height);
+                ctx.fillRect(p.x, p.y + gap, this.width, ground.y - (p.y + gap));
                 ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
                 ctx.strokeRect(p.x, 0, this.width, p.y);
-                ctx.strokeRect(p.x, p.y + gap, this.width, canvas.height);
+                ctx.strokeRect(p.x, p.y + gap, this.width, ground.y - (p.y + gap));
             }
         }
     };
@@ -270,9 +299,21 @@
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        pipes.update(); pipes.draw();
-        bird.update(); bird.draw();
-        frames++; requestAnimationFrame(loop);
+        
+        // Draw Pipes First
+        pipes.update(); 
+        pipes.draw();
+        
+        // Draw Moving Ground
+        ground.update();
+        ground.draw();
+
+        // Draw Bird on Top
+        bird.update(); 
+        bird.draw();
+        
+        frames++; 
+        requestAnimationFrame(loop);
     }
     loop();
 
