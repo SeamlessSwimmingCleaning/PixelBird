@@ -3,19 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <meta name="apple-mobile-web-app-title" content="Pixel Bird">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Pixel Bird Pro</title>
-    style>
-        body {
-            padding-top: env(safe-area-inset-top);
-        }
-    </style>
+    <title>Pixel Bird Fixed</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -31,36 +21,43 @@
             --overlay-bg: rgba(0, 0, 0, 0.7);
         }
 
-        * { -webkit-touch-callout: none; -webkit-user-select: none; touch-action: manipulation; }
+        * { -webkit-touch-callout: none; -webkit-user-select: none; touch-action: manipulation; box-sizing: border-box; }
 
         body {
             margin: 0; padding: 0;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; background-color: #111;
+            height: 100vh; width: 100vw;
+            background-color: #111;
             font-family: 'Press Start 2P', cursive;
             overflow: hidden;
         }
 
         #game-container {
             position: relative;
-            width: 85vw; 
-            height: calc(85vw * 1.5); 
-            max-height: 85vh;
-            max-width: 400px;
+            /* Optimized for iPhone 6 Screen */
+            width: 320px; 
+            height: 520px; 
             background-color: var(--bg-color);
             border: 6px solid #000;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            /* Center fix */
+            margin: auto;
         }
 
-        canvas { display: block; image-rendering: pixelated; width: 100%; height: 100%; }
+        canvas { 
+            display: block; 
+            image-rendering: pixelated; 
+            width: 100%; 
+            height: 100%; 
+        }
 
+        /* All overlays same as before */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center;
             align-items: center; background: var(--overlay-bg);
-            color: var(--text-color); z-index: 10;
-            text-align: center;
+            color: var(--text-color); z-index: 10; text-align: center;
         }
 
         #gear-btn {
@@ -78,13 +75,11 @@
         }
 
         .hidden { display: none !important; }
-
         #score-val {
             position: absolute; top: 40px; width: 100%; text-align: center;
             font-size: 30px; color: white; text-shadow: 3px 3px #000;
             pointer-events: none; z-index: 5;
         }
-
         .high-score-label { font-size: 10px; margin: 5px 0; color: #f1c40f; }
     </style>
 </head>
@@ -123,8 +118,9 @@
     var ctx = canvas.getContext('2d');
     var scoreEl = document.getElementById('score-val');
     
+    // Internal drawing resolution (Standard Flappy Bird Ratio)
     canvas.width = 320; 
-    canvas.height = 480;
+    canvas.height = 520;
 
     var state = 'MENU';
     var score = 0;
@@ -285,6 +281,14 @@
         requestAnimationFrame(loop);
     }
     loop();
+
+    // Offline Service Worker
+    if ('serviceWorker' in navigator) {
+        var swCode = "self.addEventListener('fetch', function(event) { event.respondWith(fetch(event.request).catch(function() { return caches.match(event.request); })); });";
+        var blob = new Blob([swCode], {type: 'text/javascript'});
+        var url = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(url);
+    }
 </script>
 </body>
 </html>
